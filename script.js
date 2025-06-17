@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newsContainer = document.getElementById('news-container');
     const paginationContainer = document.getElementById('pagination-container');
     const itemsPerPage = 10;
+    const TRENDING_SCORE_THRESHOLD = 1; // Puanı bu değerden büyük olanlar "Öne Çıkan" sayılır
     let allTopNews = [];
     let currentPage = 1;
 
@@ -10,13 +11,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`haberler.json?v=${new Date().getTime()}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             
-            const news = await response.json();
+            const news = await response.json(); // Bu liste zaten en yeniden en eskiye sıralı
             if (news.length === 0) {
                 newsContainer.innerHTML = '<p class="loading">Günün öne çıkan haberi henüz yok.</p>';
                 return;
             }
 
-            allTopNews = news.sort((a, b) => (b.onem_skoru || 0) - (a.onem_skoru || 0));
+            // Haberleri sıralamak yerine puana göre FİLTRELE
+            allTopNews = news.filter(article => (article.onem_skoru || 0) > TRENDING_SCORE_THRESHOLD);
+            
+            if (allTopNews.length === 0) {
+                newsContainer.innerHTML = '<p class="loading">Günün öne çıkan haberi henüz yok.</p>';
+                paginationContainer.style.display = 'none';
+                return;
+            }
             
             displayPage(currentPage);
 
@@ -62,11 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const pageCount = Math.ceil(allTopNews.length / itemsPerPage);
         if (pageCount <= 1) return;
 
-        // Geri Butonu
         const prevBtn = createPaginationLink(currentPage - 1, 'Geri', false, currentPage === 1);
         paginationContainer.appendChild(prevBtn);
 
-        // Akıllı Sayfa Numaraları
         const pagesToShow = new Set();
         pagesToShow.add(1);
         pagesToShow.add(pageCount);
@@ -90,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
             lastPage = pageNum;
         }
 
-        // İleri Butonu
         const nextBtn = createPaginationLink(currentPage + 1, 'İleri', false, currentPage === pageCount);
         paginationContainer.appendChild(nextBtn);
     }
