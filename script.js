@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
             allTopNews = news.sort((a, b) => (b.onem_skoru || 0) - (a.onem_skoru || 0));
             
             displayPage(currentPage);
-            setupPagination();
 
         } catch (error) {
             console.error("Haberler yüklenirken hata oluştu:", error);
@@ -57,11 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePaginationUI();
     }
 
-    function setupPagination() {
-        if (!paginationContainer) return;
-        updatePaginationUI();
-    }
-
     function updatePaginationUI() {
         if (!paginationContainer) return;
         paginationContainer.innerHTML = "";
@@ -69,35 +63,51 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pageCount <= 1) return;
 
         // Geri Butonu
-        const prevBtn = document.createElement('a');
-        prevBtn.innerText = 'Geri';
-        if (currentPage === 1) {
-            prevBtn.classList.add('disabled');
-        } else {
-            prevBtn.addEventListener('click', () => displayPage(currentPage - 1));
-        }
+        const prevBtn = createPaginationLink(currentPage - 1, 'Geri', false, currentPage === 1);
         paginationContainer.appendChild(prevBtn);
 
-        // Sayfa Numaraları
-        for (let i = 1; i <= pageCount; i++) {
-            const btn = document.createElement('a');
-            btn.innerText = i;
-            if (i === currentPage) {
-                btn.classList.add('active');
+        // Akıllı Sayfa Numaraları
+        const pagesToShow = new Set();
+        pagesToShow.add(1);
+        pagesToShow.add(pageCount);
+        pagesToShow.add(currentPage);
+        if (currentPage > 1) pagesToShow.add(currentPage - 1);
+        if (currentPage > 2) pagesToShow.add(currentPage - 2);
+        if (currentPage < pageCount) pagesToShow.add(currentPage + 1);
+        if (currentPage < pageCount - 1) pagesToShow.add(currentPage + 2);
+
+        const sortedPages = Array.from(pagesToShow).sort((a, b) => a - b);
+        
+        let lastPage = 0;
+        for (const pageNum of sortedPages) {
+            if (lastPage !== 0 && pageNum > lastPage + 1) {
+                const ellipsis = document.createElement('span');
+                ellipsis.innerText = '...';
+                paginationContainer.appendChild(ellipsis);
             }
-            btn.addEventListener('click', () => displayPage(i));
-            paginationContainer.appendChild(btn);
+            const pageLink = createPaginationLink(pageNum, pageNum, pageNum === currentPage, false);
+            paginationContainer.appendChild(pageLink);
+            lastPage = pageNum;
         }
 
         // İleri Butonu
-        const nextBtn = document.createElement('a');
-        nextBtn.innerText = 'İleri';
-        if (currentPage === pageCount) {
-            nextBtn.classList.add('disabled');
-        } else {
-            nextBtn.addEventListener('click', () => displayPage(currentPage + 1));
-        }
+        const nextBtn = createPaginationLink(currentPage + 1, 'İleri', false, currentPage === pageCount);
         paginationContainer.appendChild(nextBtn);
+    }
+
+    function createPaginationLink(page, text, isActive, isDisabled) {
+        const a = document.createElement('a');
+        a.innerText = text;
+        if (isActive) a.classList.add('active');
+        if (isDisabled) {
+            a.classList.add('disabled');
+        } else {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                displayPage(page);
+            });
+        }
+        return a;
     }
 
     fetchNews();
