@@ -3,7 +3,7 @@ name: Saatlik Haber Akışı
 on:
   workflow_dispatch: # Manuel çalıştırma için
   schedule:
-    - cron: '0 6-21 * * *' # Türkiye saati ile yaklaşık 9-24 arası her saat başı çalışır
+    - cron: '0 * * * *' # Değişiklik: Her saat başı, 7/24 çalışır
 
 jobs:
   build-and-deploy:
@@ -42,3 +42,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref }}
+          force: true
