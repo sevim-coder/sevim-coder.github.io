@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newsContainer = document.getElementById('news-container');
     const paginationContainer = document.getElementById('pagination-container');
     const itemsPerPage = 10;
-    const topNewsToShow = 10; // Ana sayfada gösterilen "öne çıkan" haber sayısı
+    const TRENDING_SCORE_THRESHOLD = 1; // Puanı bu değerde veya altında olanlar "Diğer Haber" sayılır
     let allOtherNews = [];
     let currentPage = 1;
 
@@ -11,15 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`haberler.json?v=${new Date().getTime()}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             
-            const news = await response.json();
+            const news = await response.json(); // Bu liste zaten en yeniden en eskiye sıralı
             if (news.length === 0) {
                 newsContainer.innerHTML = '<p class="loading">Henüz haber yok.</p>';
                 return;
             }
 
-            const sortedNews = news.sort((a, b) => (b.onem_skoru || 0) - (a.onem_skoru || 0));
-            // *** DÜZELTME: Ana sayfadaki en önemli haberleri atlayıp geri kalanını al ***
-            allOtherNews = sortedNews.slice(topNewsToShow); 
+            // Haberleri sıralamak yerine puana göre FİLTRELE
+            allOtherNews = news.filter(article => (article.onem_skoru || 0) <= TRENDING_SCORE_THRESHOLD);
 
             if(allOtherNews.length === 0) {
                 newsContainer.innerHTML = '<p class="loading">Günün diğer gelişmeleri henüz yok.</p>';
