@@ -3,19 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anlık Gündem</title>
+    <title>Gündemin Nabzı - Öne Çıkanlar</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>Anlık Gündem</h1>
+        <h1>Gündemin Nabzı</h1>
         <nav>
-            <a href="index.html" class="active">Ana Sayfa</a>
+            <a href="index.html" class="active">Öne Çıkanlar</a>
+            <a href="diger_haberler.html">Tüm Haberler</a>
             <a href="arsiv.html">Haber Arşivi</a>
         </nav>
     </header>
-    <main id="news-container">
-        <p class="loading">Haberler yükleniyor...</p>
+    <main>
+        <div class="section-title">Günün Öne Çıkan Gelişmeleri</div>
+        <div id="news-container">
+            <p class="loading">Haberler yükleniyor...</p>
+        </div>
+        <div class="pagination" id="pagination-container"></div>
     </main>
     <footer>
         <p>&copy; 2024 - digiterax.com</p>
