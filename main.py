@@ -20,13 +20,15 @@ RSS_FEEDS = {
 PROCESSED_URLS_FILE = 'processed_urls.txt'
 OUTPUT_JSON_FILE = 'haberler.json'
 
-# --- NLTK Kurulumu ve Stopwords ---
+# --- NLTK Kurulumu ve Stopwords (HATA DÜZELTMESİ BURADA) ---
 try:
     nltk.data.find('tokenizers/punkt')
     nltk.data.find('corpora/stopwords')
-except nltk.downloader.DownloadError:
+except LookupError: # <-- Hatalı olan 'DownloadError' 'LookupError' ile değiştirildi.
+    print("--> NLTK veri paketleri bulunamadı. İndiriliyor...")
     nltk.download('punkt')
     nltk.download('stopwords')
+    print("--> NLTK veri paketleri başarıyla indirildi.")
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -89,7 +91,7 @@ def summarize_with_gemini(title, text_to_summarize):
     except Exception as e:
         print(f"--> Gemini API hatası: {e}"); return None
 
-# --- Dosya İşlemleri (Değişiklik yok) ---
+# --- Dosya İşlemleri ---
 def get_processed_urls():
     if not os.path.exists(PROCESSED_URLS_FILE): return set()
     with open(PROCESSED_URLS_FILE, 'r') as f: return set(line.strip() for line in f)
@@ -113,7 +115,8 @@ def main():
     for source, url in RSS_FEEDS.items():
         feed = feedparser.parse(url)
         for entry in feed.entries:
-            if entry.link not in processed_urls:
+            # Aynı linke sahip haberleri tekrar işlememek için kontrol et
+            if entry.link not in processed_urls and entry.link not in [e.link for e in all_new_entries]:
                 entry.source_name = source # Kaynak adını girişe ekle
                 all_new_entries.append(entry)
     
@@ -145,7 +148,7 @@ def main():
             new_article = {
                 'kaynak': entry.source_name, 'orjinal_link': entry.link, 'baslik': entry.title,
                 'yorumlanmis_metin': rewritten_text, 'resim': image_url,
-                'onem_skoru': trend_score, # PUAN BURADA EKLENDİ
+                'onem_skoru': trend_score, 
                 'tarih': datetime.now().strftime("%d/%m/%Y %H:%M")
             }
             existing_news.insert(0, new_article)
