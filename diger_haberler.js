@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const paginationContainer = document.getElementById('pagination-container');
     const itemsPerPage = 10;
     let allOtherNews = [];
+    let currentPage = 1;
 
     async function fetchNews() {
         try {
@@ -15,20 +16,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Önem skoruna göre sırala
             const sortedNews = news.sort((a, b) => (b.onem_skoru || 0) - (a.onem_skoru || 0));
-            // Ana sayfada gösterilen "öne çıkan" haberleri atla
-            // Önemli: Buradaki mantık, ana sayfada her zaman en yüksek puanlıların gösterildiği varsayımına dayanır.
-            // Puanı 5'ten düşük olanları veya ilk 10'dan sonrasını alarak daha çeşitli bir liste oluşturabiliriz.
-            // Şimdilik en basit haliyle, en yüksek puanlı ilk 10 haberden sonrasını gösterelim.
-            allOtherNews = sortedNews.slice(10); 
+            allOtherNews = sortedNews; // Tüm haberleri al, öne çıkanları atlama
 
             if(allOtherNews.length === 0) {
                 newsContainer.innerHTML = '<p class="loading">Günün diğer gelişmeleri henüz yok.</p>';
                 return;
             }
             
-            displayPage(1);
+            displayPage(currentPage);
             setupPagination();
 
         } catch (error) {
@@ -38,17 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayPage(page) {
+        currentPage = page;
         newsContainer.innerHTML = '';
-        page--; // 0-indexed'e çevir
-
-        const start = itemsPerPage * page;
+        const start = itemsPerPage * (page - 1);
         const end = start + itemsPerPage;
         const paginatedItems = allOtherNews.slice(start, end);
 
         paginatedItems.forEach(article => {
             const card = document.createElement('article');
             card.className = 'news-card';
-
             let imageHtml = article.resim ? `<img src="${article.resim}" alt="${article.baslik}" onerror="this.style.display='none'">` : '';
             
             card.innerHTML = `
@@ -63,30 +57,51 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             newsContainer.appendChild(card);
         });
-        
-        window.scrollTo(0, 0); // Sayfa değiştirince yukarı çık
+        window.scrollTo(0, 0);
+        updatePaginationUI();
+    }
+    
+    function setupPagination() {
+        if (!paginationContainer) return;
+        updatePaginationUI();
     }
 
-    function setupPagination() {
+    function updatePaginationUI() {
+        if (!paginationContainer) return;
         paginationContainer.innerHTML = "";
         const pageCount = Math.ceil(allOtherNews.length / itemsPerPage);
         if (pageCount <= 1) return;
 
+        // Geri Butonu
+        const prevBtn = document.createElement('a');
+        prevBtn.innerText = 'Geri';
+        if (currentPage === 1) {
+            prevBtn.classList.add('disabled');
+        } else {
+            prevBtn.addEventListener('click', () => displayPage(currentPage - 1));
+        }
+        paginationContainer.appendChild(prevBtn);
+
+        // Sayfa Numaraları
         for (let i = 1; i <= pageCount; i++) {
             const btn = document.createElement('a');
-            btn.href = '#';
             btn.innerText = i;
-            if (i === 1) btn.classList.add('active');
-
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const current = document.querySelector('.pagination a.active');
-                if (current) current.classList.remove('active');
+            if (i === currentPage) {
                 btn.classList.add('active');
-                displayPage(i);
-            });
+            }
+            btn.addEventListener('click', () => displayPage(i));
             paginationContainer.appendChild(btn);
         }
+
+        // İleri Butonu
+        const nextBtn = document.createElement('a');
+        nextBtn.innerText = 'İleri';
+        if (currentPage === pageCount) {
+            nextBtn.classList.add('disabled');
+        } else {
+            nextBtn.addEventListener('click', () => displayPage(currentPage + 1));
+        }
+        paginationContainer.appendChild(nextBtn);
     }
 
     fetchNews();
