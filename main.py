@@ -20,14 +20,18 @@ RSS_FEEDS = {
 PROCESSED_URLS_FILE = 'processed_urls.txt'
 OUTPUT_JSON_FILE = 'haberler.json'
 
-# --- NLTK Kurulumu ve Stopwords (HATA DÜZELTMESİ BURADA) ---
+# --- NLTK Kurulumu ve Stopwords (SON DÜZELTME) ---
 try:
+    # Gerekli tüm paketlerin varlığını kontrol et
     nltk.data.find('tokenizers/punkt')
     nltk.data.find('corpora/stopwords')
-except LookupError: # <-- Hatalı olan 'DownloadError' 'LookupError' ile değiştirildi.
-    print("--> NLTK veri paketleri bulunamadı. İndiriliyor...")
-    nltk.download('punkt')
-    nltk.download('stopwords')
+    nltk.data.find('tokenizers/punkt_tab') # Eksik olan kontrol eklendi
+except LookupError:
+    print("--> Gerekli NLTK veri paketleri bulunamadı. İndiriliyor...")
+    # Eksik olan tüm paketleri indir
+    nltk.download('punkt', quiet=True)
+    nltk.download('stopwords', quiet=True)
+    nltk.download('punkt_tab', quiet=True) # Eksik olan indirme komutu eklendi
     print("--> NLTK veri paketleri başarıyla indirildi.")
 
 from nltk.corpus import stopwords
@@ -51,12 +55,10 @@ def get_trending_keywords(all_entries, top_n=15):
     """Tüm haber başlıklarından trend olan anahtar kelimeleri çıkarır."""
     print("-> Trend analizi başlatılıyor...")
     all_titles_text = ' '.join([entry.title for entry in all_entries])
-    tokens = word_tokenize(all_titles_text.lower())
+    tokens = word_tokenize(all_titles_text.lower(), language='turkish') # Dili belirttik
     
-    # Stopwords ve tek karakterli tokenları filtrele
     filtered_tokens = [word for word in tokens if word.isalpha() and word not in TURKISH_STOPWORDS and len(word) > 2]
     
-    # En çok geçen kelimeleri bul
     most_common_words = [word for word, count in Counter(filtered_tokens).most_common(top_n)]
     print(f"-> Günün Trendleri: {most_common_words}")
     return set(most_common_words)
@@ -111,27 +113,22 @@ def main():
     processed_urls, existing_news, new_articles_found = get_processed_urls(), get_existing_news(), 0
     all_new_entries = []
 
-    # 1. Adım: Tüm kaynaklardan yeni haberleri topla
     for source, url in RSS_FEEDS.items():
         feed = feedparser.parse(url)
         for entry in feed.entries:
-            # Aynı linke sahip haberleri tekrar işlememek için kontrol et
             if entry.link not in processed_urls and entry.link not in [e.link for e in all_new_entries]:
-                entry.source_name = source # Kaynak adını girişe ekle
+                entry.source_name = source
                 all_new_entries.append(entry)
     
     if not all_new_entries:
         print("İşlenecek yeni haber bulunamadı."); print("İşlem tamamlandı."); return
 
-    # 2. Adım: Trend analizi yap
     trending_keywords = get_trending_keywords(all_new_entries)
 
-    # 3. Adım: Yeni haberleri işle ve puanla
-    for entry in reversed(all_new_entries): # Eskiden yeniye işle
+    for entry in reversed(all_new_entries):
         print(f"-> {entry.source_name}: {entry.title}")
         content = clean_html(entry.get('summary', entry.get('description', '')))
         
-        # Trend puanı hesapla
         trend_score = calculate_trend_score(entry.title, trending_keywords)
 
         if len(content) < 50:
@@ -162,4 +159,5 @@ def main():
     else: print("Yeni haber bulunamadı.")
     print("İşlem tamamlandı.")
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
