@@ -5,17 +5,20 @@ import google.generativeai as genai
 from datetime import datetime
 import re
 
-# --- Ayarlar ---
+# --- Ayarlar (Yeni Kaynaklar Eklendi) ---
 RSS_FEEDS = {
     "Sözcü": "https://www.sozcu.com.tr/feed/",
+    "T24": "https://t24.com.tr/rss",
+    "Cumhuriyet": "https://www.cumhuriyet.com.tr/rss",
     "BBC Türkçe": "https://feeds.bbci.co.uk/turkce/rss.xml",
     "DW Türkçe": "https://rss.dw.com/rdf/rss-tur-all",
+    "NTV": "https://www.ntv.com.tr/gundem.rss",
     "Euronews Türkçe": "http://tr.euronews.com/rss",
     "Anka Haber Ajansı": "https://ankahaber.net/feed/"
 }
 PROCESSED_URLS_FILE = 'processed_urls.txt'
 OUTPUT_JSON_FILE = 'haberler.json'
-MAX_NEWS_COUNT = 30 # Sitede gösterilecek maksimum haber sayısı
+MAX_NEWS_COUNT = 30 
 
 # --- Güvenli API Anahtarı Yükleme ---
 try:
@@ -29,7 +32,7 @@ def clean_html(raw_html):
     """HTML etiketlerini temizler."""
     cleanr = re.compile('<.*?>')
     cleantext = re.sub(cleanr, '', raw_html)
-    return cleantext
+    return cleantext.strip()
 
 def get_processed_urls():
     if not os.path.exists(PROCESSED_URLS_FILE):
@@ -85,8 +88,12 @@ def main():
                 print(f"-> Yeni haber bulundu: {entry.title}")
                 
                 content = clean_html(entry.get('summary', entry.get('description', '')))
-                if not content or len(content) < 50:
-                    print("--> Özet yetersiz, atlanıyor.")
+                
+                # ***** DEĞİŞİKLİK BURADA YAPILDI *****
+                # Özet metni olup olmadığına dair uzunluk kontrolü kaldırıldı. 
+                # En ufak bir içerik bile Gemini'ye gönderilecek.
+                if not content:
+                    print("--> Hiç özet bulunamadı, atlanıyor.")
                     continue
                 
                 rewritten_text = summarize_with_gemini(entry.title, content)
