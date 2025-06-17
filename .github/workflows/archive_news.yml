@@ -1,0 +1,38 @@
+name: Günlük Haber Arşivleme
+
+on:
+  workflow_dispatch: # Manuel çalıştırma için
+  schedule:
+    - cron: '0 16 * * *' # UTC saati. Türkiye saati ile 19:00'a denk gelir.
+
+jobs:
+  archive-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Depoyu Klonla
+        uses: actions/checkout@v3
+        with:
+            persist-credentials: false 
+            fetch-depth: 0
+
+      - name: Python Kurulumu
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Arşivleme Scriptini Çalıştır
+        run: python archive.py
+
+      - name: Değişiklikleri Kaydet
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git diff --quiet && git diff --staged --quiet || git commit -m "Günlük arşiv: $(date)"
+          
+      - name: Değişiklikleri Gönder
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+          force: true
