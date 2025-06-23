@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newsContainer = document.getElementById('news-container');
     const paginationContainer = document.getElementById('pagination-container');
     const itemsPerPage = 10;
-    const TRENDING_SCORE_THRESHOLD = 1; // Puanı bu değerden büyük olanlar "Öne Çıkan" sayılır
+    const TRENDING_SCORE_THRESHOLD = 4; // Puanı bu değerden büyük olanlar "Öne Çıkan" sayılır
     let allTopNews = [];
     let currentPage = 1;
 
