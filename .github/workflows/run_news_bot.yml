@@ -3,7 +3,7 @@ name: Saatlik Haber Akışı
 on:
   workflow_dispatch: # Manuel çalıştırma için
   schedule:
-    - cron: '0 * * * *' # Değişiklik: Her saat başı, 7/24 çalışır
+    - cron: '*/15 * * * *' # Değişiklik: Her saat başı, 7/24 çalışır
 
 jobs:
   build-and-deploy:
